@@ -1,0 +1,10 @@
+**/target
+.direnv/
+.scala-build/
+**/target
+.bsp/
+
+node_modules/
+# only on the top level
+*.java
+*.class
