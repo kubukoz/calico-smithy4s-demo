@@ -6,7 +6,7 @@
     let pkgs = import nixpkgs { inherit system; }; in
     {
       devShells.default = pkgs.mkShell {
-        packages = [ pkgs.nodejs ];
+        packages = [ pkgs.nodejs pkgs.yarn ];
       };
     });
 }

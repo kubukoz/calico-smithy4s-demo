@@ -33,9 +33,25 @@ lazy val app = crossProject(JSPlatform)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.raquo" %%% "laminar" % "0.13.1"
+      "com.raquo" %%% "laminar" % "0.14.2"
     ),
   )
+  .jsSettings(
+    Compile / fastOptJS / artifactPath := (ThisBuild / baseDirectory).value / "web" / "main.js",
+    Compile / fullOptJS / artifactPath := (ThisBuild / baseDirectory).value / "web" / "main.js",
+    scalaJSUseMainModuleInitializer := true,
+    scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
+    externalNpm := {
+      sys
+        .process
+        .Process(
+          List("yarn", "--cwd", ((ThisBuild / baseDirectory).value / "web").toString)
+        )
+        .!
+      (ThisBuild / baseDirectory).value / "web"
+    },
+  )
+  .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
 
 lazy val root = tlCrossRootProject
   .aggregate(app)
