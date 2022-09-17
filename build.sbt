@@ -31,7 +31,10 @@ val commonSettings = Seq(
 lazy val app = crossProject(JSPlatform)
   .crossType(CrossType.Pure)
   .settings(
-    commonSettings
+    commonSettings,
+    libraryDependencies ++= Seq(
+      "com.raquo" %%% "laminar" % "0.13.1"
+    ),
   )
 
 lazy val root = tlCrossRootProject
