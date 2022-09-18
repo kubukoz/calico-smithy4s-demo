@@ -61,7 +61,12 @@ object GreetingComponent {
         client
           .getHello(s.name)
           .flatMap { out =>
-            state.update(_.copy(greeting = out.greeting.some))
+            state.update(
+              _.copy(
+                greeting = out.greeting.some,
+                greetingHistory = s.greetingHistory.appendedAll(s.greeting),
+              )
+            )
           }
       }
 
