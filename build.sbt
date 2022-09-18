@@ -8,11 +8,11 @@ ThisBuild / developers := List(tlGitHubDev("kubukoz", "Jakub Kozłowski"))
 def crossPlugin(x: sbt.librarymanagement.ModuleID) = compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(
-  crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
+  // crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
 )
 
-ThisBuild / scalaVersion := "2.13.8"
-ThisBuild / crossScalaVersions := Seq("2.13.8")
+ThisBuild / scalaVersion := "3.2.0"
+ThisBuild / crossScalaVersions := Seq("3.2.0")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -20,6 +20,7 @@ ThisBuild / tlFatalWarnings := false
 ThisBuild / tlFatalWarningsInCi := false
 
 val commonSettings = Seq(
+  scalacOptions -= "-Ykind-projector:underscores",
   libraryDependencies ++= compilerPlugins ++ Seq(
     "com.disneystreaming" %%% "weaver-cats" % "0.7.15" % Test,
     "com.disneystreaming" %%% "weaver-discipline" % "0.7.15" % Test,
@@ -28,12 +29,25 @@ val commonSettings = Seq(
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
 )
 
-lazy val app = crossProject(JSPlatform)
-  .crossType(CrossType.Pure)
+lazy val core = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Full)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.raquo" %%% "laminar" % "0.14.2"
+      "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value
+    ),
+    smithy4sAllowedNamespaces := List("hello"),
+  )
+  .enablePlugins(Smithy4sCodegenPlugin)
+
+lazy val front = crossProject(JSPlatform)
+  .crossType(CrossType.Full)
+  .settings(
+    commonSettings,
+    libraryDependencies ++= Seq(
+      "com.armanbilge" %%% "calico" % "0.1.1",
+      "org.http4s" %%% "http4s-dom" % "0.2.3",
+      "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
   )
   .jsSettings(
@@ -41,20 +55,22 @@ lazy val app = crossProject(JSPlatform)
     Compile / fullOptJS / artifactPath := (ThisBuild / baseDirectory).value / "web" / "main.js",
     scalaJSUseMainModuleInitializer := true,
     scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
-    externalNpm := {
-      sys
-        .process
-        .Process(
-          List("yarn", "--cwd", ((ThisBuild / baseDirectory).value / "web").toString)
-        )
-        .!
-      (ThisBuild / baseDirectory).value / "web"
-    },
   )
-  .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
+  .dependsOn(core)
+
+lazy val server = crossProject(JVMPlatform)
+  .crossType(CrossType.Full)
+  .settings(
+    commonSettings,
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-ember-server" % "0.23.16",
+      "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
+    ),
+  )
+  .dependsOn(core)
 
 lazy val root = tlCrossRootProject
-  .aggregate(app)
+  .aggregate(core, front, server)
   .settings(
     Compile / doc / sources := Seq()
   )
