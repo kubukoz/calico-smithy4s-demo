@@ -1,9 +1,9 @@
-# calica-smithy4s-demo
+# calico-smithy4s-demo
 
 Small project serving as a demonstration of a full-stack Smithy4s application.
 
 - Backend: http4s, smithy4s
-- Frontend: calica, smithy4s
+- Frontend: calico, smithy4s
 
 ## Development
 
