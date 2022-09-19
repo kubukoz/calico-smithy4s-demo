@@ -33,8 +33,6 @@ Vite sets up a reverse proxy for all `/api/**` routes that targets the backend h
 
 ## Deployment
 
-TODO. In general, for small applications you'll want to directly serve resources from http4s.
+1. `sbt Docker/publishLocal`
+2. Deploy Docker image on a platform of your choice
 
-- Run a dist task on the yarn build.
-- Put the output into a location that http4s can serve resources from
-- Package everything into a single Docker image with the Scala application.
