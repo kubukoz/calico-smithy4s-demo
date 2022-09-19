@@ -7,10 +7,22 @@ Small project serving as a demonstration of a full-stack Smithy4s application.
 
 ## Development
 
-Currently, you need three things to run the app.
+### Easy way
+
+```bash
+sbt
+> serverJVM/run
+```
+
+This will build the frontend, the backend, and launch a server that hosts both at `localhost:8080`.
+Note that there will be no file watching, no automatic recompilation, or anything of the sort.
+
+### Hard way
+
+This works best if you want to get quick feedback on the frontend changes.
 
 1. Run `yarn dev` inside `web` (after an initial `yarn` to fetch dependencies)
-2. Run `sbt ~front/fastOptJS` to rebuild frontend on each core/frontend change
+2. Run `sbt ~front/frontLink` to rebuild frontend on each core/frontend change
 3. Run `sbt serverJVM/run` or `bloop run serverJVM` to run the backend.
 
 ## Dev server inner workings

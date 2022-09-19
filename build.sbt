@@ -40,6 +40,9 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .enablePlugins(Smithy4sCodegenPlugin)
 
+val frontLink = taskKey[File]("Build the frontend. If RELEASE is set, uses fullOptJS.")
+val yarnBuild = taskKey[File]("Build the web app. Returns the dist directory")
+
 lazy val front = crossProject(JSPlatform)
   .crossType(CrossType.Full)
   .settings(
@@ -49,10 +52,50 @@ lazy val front = crossProject(JSPlatform)
       "org.http4s" %%% "http4s-dom" % "0.2.3",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
+    frontLink := {
+      def ifRelease[A](ifTrue: A, ifFalse: A): A =
+        if (sys.env.contains("RELEASE"))
+          ifTrue
+        else
+          ifFalse
+
+      val in =
+        ifRelease(
+          ifTrue = Compile / fullOptJS,
+          ifFalse = Compile / fastOptJS,
+        ).value
+
+      val inPath =
+        ifRelease(
+          ifTrue = Compile / fullOptJS / artifactPath,
+          ifFalse = Compile / fastOptJS / artifactPath,
+        ).value
+
+      val outPath = (ThisBuild / baseDirectory).value / "web" / "main.js"
+
+      IO.copyFile(inPath, outPath)
+      outPath
+    },
+    yarnBuild := {
+      // Using hash, because the file is copied every time for code simplicity
+      FileFunction.cached(streams.value.cacheStoreFactory, FileInfo.hash) { (_, _) =>
+        import sys.process._
+        Process(
+          List(
+            "yarn",
+            "--cwd",
+            ((ThisBuild / baseDirectory).value / "web").toString,
+            "build",
+          )
+        ).!
+
+        Set.empty[File]
+      }(Set(frontLink.value))
+
+      (ThisBuild / baseDirectory).value / "web" / "dist"
+    },
   )
   .jsSettings(
-    Compile / fastOptJS / artifactPath := (ThisBuild / baseDirectory).value / "web" / "main.js",
-    Compile / fullOptJS / artifactPath := (ThisBuild / baseDirectory).value / "web" / "main.js",
     scalaJSUseMainModuleInitializer := true,
     scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
   )
@@ -62,12 +105,29 @@ lazy val server = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
     commonSettings,
+    fork := true,
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-ember-server" % "0.23.16",
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
     ),
+    Compile / resourceGenerators += Def.task {
+      import sys.process._
+
+      val frontendDir = (front.js / yarnBuild).value
+      val targetDir = (Compile / resourceManaged).value / "frontend"
+
+      IO.delete(targetDir)
+      IO.copyDirectory(frontendDir, targetDir)
+
+      Path.allSubpaths(targetDir).map(_._1).toList
+    },
   )
   .dependsOn(core)
+  .enablePlugins(JavaAppPackaging)
+  .settings(
+    dockerBaseImage := "openjdk:11-jre-slim"
+  )
+  .enablePlugins(DockerPlugin)
 
 lazy val root = tlCrossRootProject
   .aggregate(core, front, server)

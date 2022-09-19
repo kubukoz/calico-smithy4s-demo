@@ -1,12 +1,16 @@
 package lame
 
-import cats.effect.IOApp
 import cats.effect.IO
-import org.http4s.ember.server.EmberServerBuilder
-import com.comcast.ip4s._
-import smithy4s.http4s.SimpleRestJsonBuilder
-import hello._
+import cats.effect.IOApp
 import cats.effect.std.UUIDGen
+import cats.implicits._
+import com.comcast.ip4s._
+import hello._
+import org.http4s.HttpRoutes
+import org.http4s.StaticFile
+import org.http4s.dsl.io._
+import org.http4s.ember.server.EmberServerBuilder
+import smithy4s.http4s.SimpleRestJsonBuilder
 
 object Server extends IOApp.Simple {
 
@@ -19,6 +23,18 @@ object Server extends IOApp.Simple {
 
     }
 
+  val staticRoutes: HttpRoutes[IO] = HttpRoutes.of {
+    case req @ GET -> ((Root / "index.html") | Root) =>
+      StaticFile
+        .fromResource("frontend/index.html", Some(req))
+        .getOrElseF(InternalServerError())
+
+    case req @ GET -> path if path.startsWith(Root / "assets") =>
+      StaticFile
+        .fromResource("frontend/" + path.renderString, Some(req))
+        .getOrElseF(InternalServerError())
+  }
+
   def run: IO[Unit] =
     SimpleRestJsonBuilder
       .routes(impl)
@@ -28,7 +44,7 @@ object Server extends IOApp.Simple {
           .default[IO]
           .withHost(host"0.0.0.0")
           .withPort(port"8080")
-          .withHttpApp(routes.orNotFound)
+          .withHttpApp((routes <+> staticRoutes).orNotFound)
           .build
       }
       .useForever
