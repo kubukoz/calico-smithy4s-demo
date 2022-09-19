@@ -37,6 +37,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value
     ),
     smithy4sAllowedNamespaces := List("hello"),
+    Compile / smithy4sInputDir := (ThisBuild / baseDirectory).value / "core" / "shared" / "src" / "main" / "smithy",
   )
   .enablePlugins(Smithy4sCodegenPlugin)
 
