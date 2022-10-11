@@ -4,10 +4,11 @@ Small project serving as a demonstration of a full-stack Smithy4s application.
 
 - Backend: http4s, smithy4s
 - Frontend: calico, smithy4s
+- CLI: decline, http4s, smithy4s
 
 ## Development
 
-### Easy way
+### Easy way - server+frontend
 
 ```bash
 sbt
@@ -35,4 +36,12 @@ Vite sets up a reverse proxy for all `/api/**` routes that targets the backend h
 
 1. `sbt Docker/publishLocal`
 2. Deploy Docker image on a platform of your choice
+
+## Building the CLI
+
+The command line client is cross-built for Scala (JVM), Scala.js (node.js) and Scala Native (native binary). To get the runnables:
+
+- JVM: build with `cliJVM/stage`, run with `./cli/jvm/target/universal/stage/bin/cli`
+- JS: build with `cliJS/fastOptJS`, run with `node ./cli/js/target/scala-3.2.0/cli-fastopt.js`
+- Native: build with `cliNative/nativeLink`, run with `./cli/native/target/scala-3.2.0/cli-out`
 

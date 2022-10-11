@@ -8,6 +8,7 @@ service HelloService {
   operations: [GetHello]
 }
 
+/// Fetch a greeting for a name
 @http(method: "GET", uri: "/api/hello/{name}")
 @readonly
 operation GetHello {

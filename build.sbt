@@ -22,14 +22,13 @@ ThisBuild / tlFatalWarningsInCi := false
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
   libraryDependencies ++= compilerPlugins ++ Seq(
-    "com.disneystreaming" %%% "weaver-cats" % "0.7.15" % Test,
-    "com.disneystreaming" %%% "weaver-discipline" % "0.7.15" % Test,
-    "com.disneystreaming" %%% "weaver-scalacheck" % "0.7.15" % Test,
+    "com.disneystreaming" %%% "weaver-cats" % "0.8.0" % Test,
+    "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.0" % Test,
   ),
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
 )
 
-lazy val core = crossProject(JVMPlatform, JSPlatform)
+lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
     commonSettings,
@@ -102,6 +101,28 @@ lazy val front = crossProject(JSPlatform)
   )
   .dependsOn(core)
 
+lazy val cli = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+  .crossType(CrossType.Full)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.http4s" %%% "http4s-ember-client" % "0.23.16",
+      "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
+      "com.disneystreaming.smithy4s" %%% "smithy4s-decline" % smithy4sVersion.value,
+      "com.monovore" %%% "decline-effect" % "2.3.1",
+    )
+  )
+  .nativeSettings(
+    libraryDependencies ++= Seq(
+      "com.armanbilge" %%% "epollcat" % "0.1.1"
+    )
+  )
+  .jsSettings(
+    scalaJSUseMainModuleInitializer := true,
+    scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
+  )
+  .dependsOn(core)
+  .enablePlugins(JavaAppPackaging)
+
 lazy val server = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
   .settings(
@@ -131,7 +152,7 @@ lazy val server = crossProject(JVMPlatform)
   .enablePlugins(DockerPlugin)
 
 lazy val root = tlCrossRootProject
-  .aggregate(core, front, server)
+  .aggregate(core, front, cli, server)
   .settings(
     Compile / doc / sources := Seq()
   )

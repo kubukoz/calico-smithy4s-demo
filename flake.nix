@@ -7,6 +7,7 @@
     {
       devShells.default = pkgs.mkShell {
         packages = [ pkgs.nodejs pkgs.yarn ];
+        nativeBuildInputs = [ pkgs.s2n-tls ];
       };
     });
 }
