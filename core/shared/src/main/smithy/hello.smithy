@@ -1,7 +1,7 @@
 $version: "2"
 namespace hello
 
-use smithy4s.api#simpleRestJson
+use alloy#simpleRestJson
 
 @simpleRestJson
 service HelloService {

@@ -11,8 +11,8 @@ val compilerPlugins = List(
   // crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
 )
 
-ThisBuild / scalaVersion := "3.2.0"
-ThisBuild / crossScalaVersions := Seq("3.2.0")
+ThisBuild / scalaVersion := "3.2.1"
+ThisBuild / crossScalaVersions := Seq("3.2.1")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -36,7 +36,9 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value
     ),
     smithy4sAllowedNamespaces := List("hello"),
-    Compile / smithy4sInputDir := (ThisBuild / baseDirectory).value / "core" / "shared" / "src" / "main" / "smithy",
+    Compile / smithy4sInputDirs := List(
+      (ThisBuild / baseDirectory).value / "core" / "shared" / "src" / "main" / "smithy"
+    ),
   )
   .enablePlugins(Smithy4sCodegenPlugin)
 
