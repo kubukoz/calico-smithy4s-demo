@@ -11,8 +11,8 @@ val compilerPlugins = List(
   // crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
 )
 
-ThisBuild / scalaVersion := "3.2.1"
-ThisBuild / crossScalaVersions := Seq("3.2.1")
+ThisBuild / scalaVersion := "3.3.0-RC3"
+ThisBuild / crossScalaVersions := Seq("3.3.0-RC3")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -21,6 +21,7 @@ ThisBuild / tlFatalWarningsInCi := false
 
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
+  scalacOptions += "-Wunused:imports",
   libraryDependencies ++= compilerPlugins ++ Seq(
     "com.disneystreaming" %%% "weaver-cats" % "0.8.0" % Test,
     "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.0" % Test,
@@ -50,8 +51,8 @@ lazy val front = crossProject(JSPlatform)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.armanbilge" %%% "calico" % "0.1.1",
-      "org.http4s" %%% "http4s-dom" % "0.2.3",
+      "com.armanbilge" %%% "calico" % "0.2.0-RC2",
+      "org.http4s" %%% "http4s-dom" % "0.2.7",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
     frontLink := {
