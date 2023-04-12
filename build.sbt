@@ -11,8 +11,10 @@ val compilerPlugins = List(
   // crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
 )
 
-ThisBuild / scalaVersion := "3.3.0-RC3"
-ThisBuild / crossScalaVersions := Seq("3.3.0-RC3")
+val Scala3 = "3.2.2"
+
+ThisBuild / scalaVersion := Scala3
+ThisBuild / crossScalaVersions := Seq(Scala3)
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -21,10 +23,9 @@ ThisBuild / tlFatalWarningsInCi := false
 
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
-  scalacOptions += "-Wunused:imports",
   libraryDependencies ++= compilerPlugins ++ Seq(
-    "com.disneystreaming" %%% "weaver-cats" % "0.8.0" % Test,
-    "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.0" % Test,
+    "com.disneystreaming" %%% "weaver-cats" % "0.8.2" % Test,
+    "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.2" % Test,
   ),
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
 )
@@ -108,15 +109,15 @@ lazy val cli = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
     libraryDependencies ++= Seq(
-      "org.http4s" %%% "http4s-ember-client" % "0.23.16",
+      "org.http4s" %%% "http4s-ember-client" % "0.23.18",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %%% "smithy4s-decline" % smithy4sVersion.value,
-      "com.monovore" %%% "decline-effect" % "2.3.1",
+      "com.monovore" %%% "decline-effect" % "2.4.1",
     )
   )
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "com.armanbilge" %%% "epollcat" % "0.1.1"
+      "com.armanbilge" %%% "epollcat" % "0.1.4"
     )
   )
   .jsSettings(
@@ -132,7 +133,7 @@ lazy val server = crossProject(JVMPlatform)
     commonSettings,
     fork := true,
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-ember-server" % "0.23.16",
+      "org.http4s" %% "http4s-ember-server" % "0.23.18",
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
     ),
