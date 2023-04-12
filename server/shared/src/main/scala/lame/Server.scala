@@ -60,8 +60,13 @@ object Server extends IOApp.Simple {
           .default[IO]
           .withHost(host"0.0.0.0")
           .withPort(port"8080")
-          .withHttpApp((routes <+> staticRoutes).orNotFound)
+          .withHttpApp(
+            (routes <+> staticRoutes <+> smithy4s.http4s.swagger.docs[IO](HelloService)).orNotFound
+          )
           .build
+      }
+      .evalTap { server =>
+        IO.println("Listening on " + server.addressIp4s)
       }
       .useForever
 

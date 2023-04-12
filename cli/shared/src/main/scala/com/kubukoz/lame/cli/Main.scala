@@ -41,16 +41,20 @@ object Main extends CommandIOApp("calico-demo", "Calico demo", true, "0.1.0") {
   def makeClient(
     url: Uri
   ): Resource[IO, HelloService[IO]] = EmberClientBuilder.default[IO].build.flatMap {
-    SimpleRestJsonBuilder(HelloServiceGen).client(_).uri(url).resource
+    SimpleRestJsonBuilder(HelloService).client(_).uri(url).resource
   }
 
+  val impl: HelloService[IO] = ???
+
+  val mainOpts: Opts[Entrypoint[HelloServiceGen, IO]] = Opts
+    .option[String]("base-url", "Base URL")
+    .map(Uri.unsafeFromString(_))
+    .withDefault(uri"http://localhost:8080")
+    .map(url => Entrypoint(impl, PrinterApi.std[IO]))
+
   def main: Opts[IO[ExitCode]] = Smithy4sCli(
-    Opts
-      .option[String]("base-url", "Base URL")
-      .map(Uri.unsafeFromString(_))
-      .withDefault(uri"http://localhost:8080")
-      .map(url => Entrypoint(unliftService(makeClient(url)), PrinterApi.std[IO])),
-    HelloServiceGen,
+    mainOpts,
+    HelloService,
   ).opts.map(_.as(ExitCode.Success))
 
 }
