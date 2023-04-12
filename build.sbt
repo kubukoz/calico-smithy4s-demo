@@ -132,6 +132,7 @@ lazy val server = crossProject(JVMPlatform)
     fork := true,
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-ember-server" % "0.23.16",
+      "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
     ),
     Compile / resourceGenerators += Def.task {
