@@ -56,6 +56,8 @@ lazy val front = crossProject(JSPlatform)
       "org.http4s" %%% "http4s-dom" % "0.2.7",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
+  )
+  .jsSettings(
     frontLink := {
       def ifRelease[A](ifTrue: A, ifFalse: A): A =
         if (sys.env.contains("RELEASE"))
@@ -98,8 +100,6 @@ lazy val front = crossProject(JSPlatform)
 
       (ThisBuild / baseDirectory).value / "web" / "dist"
     },
-  )
-  .jsSettings(
     scalaJSUseMainModuleInitializer := true,
     scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
   )
