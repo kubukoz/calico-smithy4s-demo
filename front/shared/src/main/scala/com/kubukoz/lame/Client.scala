@@ -40,17 +40,17 @@ object Client extends IOWebApp {
 
   def render: Resource[IO, HtmlElement[cats.effect.IO]] = Router(window).toResource.flatMap {
     router =>
-      val client = FrontRouteInterpreter.client(MyRoutes, router)
+      val navigate = FrontRouteInterpreter.navigator(MyRoutes, router)
 
       div(
         "Navigation: ",
         a(
-          onClick --> (_.foreach(_ => client.home())),
+          onClick --> (_.foreach(_ => navigate.home())),
           b("HOME"),
         ),
         " | ",
         a(
-          onClick --> (_.foreach(_ => client.profile(id = "50"))),
+          onClick --> (_.foreach(_ => navigate.profile(id = "50"))),
           b("PROFILE"),
         ),
         p("content:"),

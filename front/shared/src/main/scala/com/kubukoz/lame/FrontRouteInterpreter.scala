@@ -34,7 +34,7 @@ object FrontRouteInterpreter {
 
   type ClientCall[_] = IO[Unit]
 
-  def client[Alg[_[_, _, _, _, _]]](
+  def navigator[Alg[_[_, _, _, _, _]]](
     service: Service[Alg],
     router: Router[IO],
   ): smithy4s.kinds.FunctorAlgebra[Alg, ClientCall] = {
@@ -58,7 +58,7 @@ object FrontRouteInterpreter {
               endsWithSlash = true,
             )
           )
-          println("navigating to uri: " + uri)
+
           router.navigate(
             uri
           )
