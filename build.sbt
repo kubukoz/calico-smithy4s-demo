@@ -22,7 +22,7 @@ ThisBuild / tlFatalWarnings := false
 ThisBuild / tlFatalWarningsInCi := false
 
 val commonSettings = Seq(
-  scalacOptions -= "-Ykind-projector:underscores",
+  // scalacOptions -= "-Ykind-projector:underscores",
   libraryDependencies ++= compilerPlugins ++ Seq(
     "com.disneystreaming" %%% "weaver-cats" % "0.8.2" % Test,
     "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.2" % Test,
@@ -53,8 +53,12 @@ lazy val front = crossProject(JSPlatform)
     commonSettings,
     libraryDependencies ++= Seq(
       "com.armanbilge" %%% "calico" % "0.2.0-RC2",
+      "com.armanbilge" %%% "calico-router" % "0.2.0-RC2",
       "org.http4s" %%% "http4s-dom" % "0.2.7",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
+    ),
+    Compile / smithy4sInputDirs := List(
+      (ThisBuild / baseDirectory).value / "front" / "shared" / "src" / "main" / "smithy"
     ),
   )
   .jsSettings(
@@ -103,6 +107,7 @@ lazy val front = crossProject(JSPlatform)
     scalaJSUseMainModuleInitializer := true,
     scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
   )
+  .enablePlugins(Smithy4sCodegenPlugin)
   .dependsOn(core)
 
 lazy val cli = crossProject(JVMPlatform, JSPlatform, NativePlatform)

@@ -16,26 +16,46 @@
 
 import cats.effect._
 
-import hello._
-import org.http4s.dom.FetchClientBuilder
-import org.http4s.implicits._
-import smithy4s.http4s.SimpleRestJsonBuilder
-import org.http4s.Uri
-import calico.IOWebApp
-import fs2.dom.HtmlElement
+import calico.*
+import calico.html.*
+import calico.html.io.given
+import calico.html.io.*
+import fs2.dom.*
+import calico.syntax.*
+import com.kubukoz.lame.FrontRouteInterpreter
+import frontsmith.MyRoutes
+import com.kubukoz.lame.FrontRouteInterpreter.Paged
+import cats.effect.implicits.*
+import calico.router.Router
+import org.http4s.implicits.*
+import cats.implicits.*
 
 object Client extends IOWebApp {
 
-  def render: Resource[IO, HtmlElement[cats.effect.IO]] = FetchClientBuilder[IO]
-    .resource
-    .flatMap { fetchClient =>
-      SimpleRestJsonBuilder(HelloService)
-        .client(fetchClient)
-        .uri(Uri.unsafeFromString(org.scalajs.dom.window.location.origin))
-        .resource
+  val handler =
+    new MyRoutes[Paged] {
+      override def home() = div("home page")
+      override def profile(id: String) = div(s"profile page: $id")
     }
-    .flatMap { client =>
-      GreetingComponent.make(client)
-    }
+
+  def render: Resource[IO, HtmlElement[cats.effect.IO]] = Router(window).toResource.flatMap {
+    router =>
+      val client = FrontRouteInterpreter.client(MyRoutes, router)
+
+      div(
+        "Navigation: ",
+        a(
+          onClick --> (_.foreach(_ => client.home())),
+          b("HOME"),
+        ),
+        " | ",
+        a(
+          onClick --> (_.foreach(_ => client.profile(id = "50"))),
+          b("PROFILE"),
+        ),
+        p("content:"),
+        router.dispatch(FrontRouteInterpreter.router(handler)),
+      )
+  }
 
 }
