@@ -97,7 +97,7 @@ object FrontRouteInterpreter {
 
         decoder.decode(meta) match {
           // basically bad request. should be handled somehow (customizable)
-          case Left(e)      => sys.error("invalid: " + e)
+          case Left(e)      => throw e
           case Right(input) => input
 
         }

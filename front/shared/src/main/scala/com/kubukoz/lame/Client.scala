@@ -35,7 +35,7 @@ object Client extends IOWebApp {
   val handler =
     new MyRoutes[Paged] {
       override def home() = div("home page")
-      override def profile(id: String) = div(s"profile page: $id")
+      override def profile(id: Int) = div(s"profile page: $id")
     }
 
   def render: Resource[IO, HtmlElement[cats.effect.IO]] = Router(window).toResource.flatMap {
@@ -50,7 +50,7 @@ object Client extends IOWebApp {
         ),
         " | ",
         a(
-          onClick --> (_.foreach(_ => navigate.profile(id = "50"))),
+          onClick --> (_.foreach(_ => navigate.profile(id = 50))),
           b("PROFILE"),
         ),
         p("content:"),

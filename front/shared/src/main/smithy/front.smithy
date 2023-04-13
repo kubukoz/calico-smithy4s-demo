@@ -30,8 +30,6 @@ operation Profile {
     input := {
         @httpLabel
         @required
-        id: String
-        // @httpQuery("name")
-        // name: String
+        id: Integer
     }
 }
