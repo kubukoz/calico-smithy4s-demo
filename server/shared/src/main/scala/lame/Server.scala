@@ -92,6 +92,7 @@ object Server extends IOApp.Simple {
                               .parser
                               .decode[List[Coordinates]](data)
                               .liftTo[IO]
+                              .debug(s"Received data from $clientId: ")
                               .flatMap { coords =>
                                 state.update(_ + (clientId, coords))
                               }

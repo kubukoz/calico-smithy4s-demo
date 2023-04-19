@@ -73,6 +73,10 @@ object Client extends IOWebApp {
                 }
                 .toList
             }
+            .scan1 {
+              case (previous, Nil) => previous.take(1)
+              case (_, next)       => next
+            }
         )
         .holdResource(List(Coordinates(0, 0)))
         .flatMap { currentPosSig =>
