@@ -35,7 +35,9 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value
+      "io.circe" %%% "circe-core" % "0.14.5",
+      "io.circe" %%% "circe-parser" % "0.14.5",
+      "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
     ),
     smithy4sAllowedNamespaces := List("hello"),
     Compile / smithy4sInputDirs := List(
@@ -134,6 +136,7 @@ lazy val server = crossProject(JVMPlatform)
     fork := true,
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-ember-server" % "0.23.18",
+      "co.fs2" %% "fs2-core" % "3.6.1",
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
     ),

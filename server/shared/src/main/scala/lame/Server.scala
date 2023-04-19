@@ -27,42 +27,87 @@ import org.http4s.StaticFile
 import org.http4s.dsl.io._
 import org.http4s.ember.server.EmberServerBuilder
 import smithy4s.http4s.SimpleRestJsonBuilder
+import org.http4s.HttpApp
+import scala.concurrent.duration._
+import org.http4s.websocket.WebSocketFrame
+import org.typelevel.log4cats.Logger
+import fs2.concurrent.SignallingRef
+import cats.effect.implicits._
+import cats.kernel.Eq
+import io.circe.Codec
+
+import io.circe.syntax._
+import scodec.bits.ByteVector
 
 object Server extends IOApp.Simple {
 
-  val impl =
-    new HelloService[IO] {
-
-      def getHello(name: String): IO[GetHelloOutput] = UUIDGen.randomUUID[IO].flatMap { uuid =>
-        IO(GetHelloOutput(s"Hello, $name! ID: " + uuid))
-      }
-
-    }
-
-  val staticRoutes: HttpRoutes[IO] = HttpRoutes.of {
-    case req @ GET -> ((Root / "index.html") | Root) =>
-      StaticFile
-        .fromResource("frontend/index.html", Some(req))
-        .getOrElseF(InternalServerError())
-
-    case req @ GET -> path if path.startsWith(Root / "assets") =>
-      StaticFile
-        .fromResource("frontend/" + path.renderString, Some(req))
-        .getOrElseF(InternalServerError())
-  }
-
   def run: IO[Unit] =
-    SimpleRestJsonBuilder
-      .routes(impl)
-      .resource
-      .flatMap { routes =>
+    SignallingRef[IO]
+      .of(Payload(Map.empty))
+      .toResource
+      .flatMap { state =>
         EmberServerBuilder
           .default[IO]
           .withHost(host"0.0.0.0")
           .withPort(port"8080")
-          .withHttpApp(
-            (routes <+> staticRoutes <+> smithy4s.http4s.swagger.docs[IO](HelloService)).orNotFound
-          )
+          .withHttpWebSocketApp { builder =>
+            HttpRoutes
+              .of[IO] { case req @ GET -> Root / "ws" =>
+                val clientId = req.remote.getOrElse(sys.error("No client IP")).toString()
+
+                builder.build(
+                  send = state
+                    .discrete
+                    .map(_ - clientId)
+                    .changes
+                    .map(_.asJson.noSpaces)
+                    .map(WebSocketFrame.Text(_))
+                    .merge(
+                      fs2
+                        .Stream
+                        .emit(
+                          WebSocketFrame
+                            .Ping(ByteVector.encodeUtf8("ping").getOrElse(sys.error("lol")))
+                        )
+                        .repeat
+                        .metered(5.seconds)
+                    ),
+                  receive =
+                    in =>
+                      fs2
+                        .Stream
+                        .exec(
+                          state
+                            .updateAndGet(_.withNewClient(clientId))
+                            .flatMap { state =>
+                              IO.println(
+                                s"Connected client $clientId, connected client count: ${state.data.size}"
+                              )
+                            }
+                        ) ++
+                        in
+                          .collect { case WebSocketFrame.Text(data, _) => data }
+                          .evalMap { data =>
+                            io.circe
+                              .parser
+                              .decode[List[Coordinates]](data)
+                              .liftTo[IO]
+                              .flatMap { coords =>
+                                state.update(_ + (clientId, coords))
+                              }
+                          }
+                          .drain
+                          .onFinalizeCase(ec =>
+                            state.updateAndGet(_ - clientId).flatMap { state =>
+                              IO.println(
+                                s"Disconnected client: $clientId $ec, client count: ${state.data.size}"
+                              )
+                            }
+                          ),
+                )
+              }
+              .orNotFound
+          }
           .build
       }
       .evalTap { server =>

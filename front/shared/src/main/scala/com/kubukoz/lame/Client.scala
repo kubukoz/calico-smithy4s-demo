@@ -23,19 +23,109 @@ import smithy4s.http4s.SimpleRestJsonBuilder
 import org.http4s.Uri
 import calico.IOWebApp
 import fs2.dom.HtmlElement
+import org.http4s.dom.WebSocketClient
+import org.http4s.client.websocket.WSRequest
+import calico.html.io._
+import calico.html.io.given
+import org.http4s.client.websocket.WSFrame.Text
+import cats.implicits._
+import scala.scalajs.js.JavaScriptException
+import scala.scalajs.js.JSON
+import scala.concurrent.duration._
+import cats.effect.std.UUIDGen
+import lame.Coordinates
+import java.util.UUID
+import io.circe.syntax._
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.client.websocket.WSDataFrame
+import org.http4s.client.websocket.WSFrame
+import lame.Payload
+import fs2.concurrent.SignallingRef
+import cats.kernel.Monoid
+import scodec.bits.ByteVector
 
 object Client extends IOWebApp {
 
-  def render: Resource[IO, HtmlElement[cats.effect.IO]] = FetchClientBuilder[IO]
-    .resource
-    .flatMap { fetchClient =>
-      SimpleRestJsonBuilder(HelloService)
-        .client(fetchClient)
-        .uri(Uri.unsafeFromString(org.scalajs.dom.window.location.origin))
-        .resource
-    }
-    .flatMap { client =>
-      GreetingComponent.make(client)
+  def render: Resource[IO, HtmlElement[cats.effect.IO]] = WebSocketClient[IO]
+    .connectHighLevel(
+      WSRequest(Uri.unsafeFromString(s"ws://192.168.0.101:8080/ws"))
+    )
+    .flatMap { wss =>
+      fs2
+        .dom
+        .events[IO, org.scalajs.dom.MouseEvent](org.scalajs.dom.window, "mousemove")
+        .map { me =>
+          Coordinates(me.clientX.toInt, me.clientY.toInt) :: Nil
+        }
+        .merge(
+          List("touchmove", "touchstart", "touchend")
+            .map {
+              fs2
+                .dom
+                .events[IO, org.scalajs.dom.TouchEvent](org.scalajs.dom.window, _)
+            }
+            .foldLeft[fs2.Stream[IO, org.scalajs.dom.TouchEvent]](fs2.Stream.empty)(_ merge _)
+            .map { te =>
+              te.targetTouches
+                .map { t =>
+                  Coordinates(t.clientX.toInt, t.clientY.toInt)
+                }
+                .toList
+            }
+        )
+        .holdResource(List(Coordinates(0, 0)))
+        .flatMap { currentPosSig =>
+
+          val sendPos =
+            currentPosSig
+              .discrete
+              .changes
+              .map((_: List[Coordinates]).asJson.noSpaces)
+              .map(WSFrame.Text(_))
+              .through(wss.sendPipe)
+              .compile
+              .drain
+              .background
+              .void
+
+          div(
+            "Positions:",
+            sendPos,
+            wss
+              .receiveStream
+              .collect { case Text(data, _) => io.circe.parser.decode[Payload](data) }
+              .evalMapFilter {
+                case Right(payload) => IO.pure(Some(payload))
+                case Left(e)        => IO.consoleForIO.printStackTrace(e).as(None)
+              }
+              .holdResource(Monoid.empty[Payload])
+              .map { sig =>
+                (sig, currentPosSig).mapN((payload, myCoords) => payload + ("You", myCoords))
+              }
+              .map { itemsSig =>
+                ul(
+                  children[String] { case s"$k-$i" =>
+                    val itemSig = itemsSig.map(_.data.get(k).flatMap(_.lift(i.toInt)))
+
+                    li(
+                      styleAttr <-- itemSig.map {
+                        case Some(Coordinates(x, y)) =>
+                          s"position: absolute; top: ${y}px; left: ${x}px;"
+                        case _ => "display: none;"
+                      },
+                      itemSig.map(item =>
+                        s"$k($i): ${item
+                            .map { case Coordinates(x, y) => s"($x, $y)" }
+                            .getOrElse("<position unknown>")}"
+                      ),
+                    )
+                  } <-- itemsSig.map(_.data.toList.sortBy(_._1).flatMap { case (k, values) =>
+                    values.indices.map(i => s"$k-$i")
+                  })
+                )
+              },
+          )
+        }
     }
 
 }
