@@ -27,6 +27,7 @@ import org.http4s.dom.WebSocketClient
 import org.http4s.client.websocket.WSRequest
 import calico.html.io._
 import calico.html.io.given
+import calico.frp.given
 import org.http4s.client.websocket.WSFrame.Text
 import cats.implicits._
 import scala.scalajs.js.JavaScriptException
@@ -99,8 +100,15 @@ object Client extends IOWebApp {
                 case Left(e)        => IO.consoleForIO.printStackTrace(e).as(None)
               }
               .holdResource(Monoid.empty[Payload])
-              .map { sig =>
-                (sig, currentPosSig).mapN((payload, myCoords) => payload + ("You", myCoords))
+              .flatMap { sig =>
+                (sig, currentPosSig)
+                  .mapN { (payload, myCoords) =>
+                    payload + ("You", myCoords)
+                  }
+                  // might not be necessary after https://github.com/typelevel/fs2/pull/3206
+                  // and https://github.com/armanbilge/calico/pull/229/
+                  .discrete
+                  .hold1Resource
               }
               .map { itemsSig =>
                 ul(
