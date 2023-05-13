@@ -15,28 +15,14 @@
  */
 
 import calico.*
-
-import calico.dsl.Dsl
-import calico.dsl.io.*
-import calico.syntax.*
-import calico.unsafe.*
-import cats.effect._
+import calico.frp.given
+import calico.html.io.*
+import calico.html.io.given
 import cats.effect.*
-import cats.effect.implicits.*
-import cats.implicits.*
-import fs2.*
-import fs2.concurrent.SignallingRef
-import hello._
-import monocle.Lens
-import org.http4s.Uri
-import org.http4s.dom.FetchClientBuilder
-import org.http4s.implicits._
-import org.scalajs.dom.HTMLDivElement
-import org.scalajs.dom.HTMLElement
-import org.scalajs.dom.HTMLStyleElement
-import org.scalajs.dom.html.Button
-import org.scalajs.dom.html.Div
-import smithy4s.http4s.SimpleRestJsonBuilder
+import cats.syntax.all.*
+import fs2.concurrent.*
+import fs2.dom.*
+import hello.HelloService
 
 object GreetingComponent {
 
@@ -48,7 +34,7 @@ object GreetingComponent {
 
   def make(
     client: HelloService[IO]
-  ): Resource[IO, HTMLDivElement] = SignallingRef[IO, State](
+  ): Resource[IO, HtmlElement[IO]] = SignallingRef[IO, State](
     State(
       name = "user",
       greeting = None,
@@ -57,9 +43,9 @@ object GreetingComponent {
   )
     .toResource
     .flatMap { state =>
-      val getName = state.discrete.map(_.name).changes
-      val getGreeting = state.discrete.map(_.greeting).changes
-      val getGreetingHistory = state.discrete.map(_.greetingHistory).changes
+      val getName = state.map(_.name)
+      val getGreeting = state.map(_.greeting)
+      val getGreetingHistory = state.map(_.greetingHistory)
 
       val handleNameChange =
         (name: String) =>
@@ -107,15 +93,17 @@ object GreetingComponent {
 object NameInput {
 
   def component(
-    name: Stream[IO, String],
+    name: Signal[IO, String],
     handleInput: String => IO[Unit],
-  ): Resource[IO, Div] = div(
+  ): Resource[IO, HtmlElement[IO]] = div(
     label("Your name"),
-    input(
-      placeholder := "Enter your name here",
-      value <-- name,
-      onInput --> (_.mapToTargetValue.foreach(handleInput(_))),
-    ),
+    input.withSelf { self =>
+      (
+        placeholder := "Enter your name here",
+        value <-- name,
+        onInput --> (_.foreach(_ => self.value.get.flatMap(handleInput))),
+      )
+    },
   )
 
 }
@@ -123,9 +111,9 @@ object NameInput {
 object GreetingButton {
 
   def component(
-    name: Stream[IO, String],
+    name: Signal[IO, String],
     handleClick: IO[Unit],
-  ): Resource[IO, Button] = button(
+  ): Resource[IO, HtmlElement[IO]] = button(
     "Get greeting for ",
     name,
     onClick --> (_.foreach(_ => handleClick)),
@@ -135,12 +123,10 @@ object GreetingButton {
 
 object GreetingViewer {
 
-  import scala.concurrent.duration.DurationInt
-
   def component(
-    greeting: Stream[IO, Option[String]],
-    greetingHistory: Stream[IO, List[String]],
-  ): Resource[IO, Div] = div(
+    greeting: Signal[IO, Option[String]],
+    greetingHistory: Signal[IO, List[String]],
+  ): Resource[IO, HtmlElement[IO]] = div(
     "Greeting history:",
     div(
       children <-- greetingHistory.map {

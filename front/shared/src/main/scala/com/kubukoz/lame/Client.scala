@@ -21,18 +21,22 @@ import org.http4s.dom.FetchClientBuilder
 import org.http4s.implicits._
 import smithy4s.http4s.SimpleRestJsonBuilder
 import org.http4s.Uri
-import org.scalajs.dom.HTMLElement
 import calico.IOWebApp
+import fs2.dom.HtmlElement
+import fs2.dom.Window
+import cats.implicits._
 
 object Client extends IOWebApp {
 
-  def render: Resource[IO, HTMLElement] = FetchClientBuilder[IO]
+  def render: Resource[IO, HtmlElement[cats.effect.IO]] = FetchClientBuilder[IO]
     .resource
     .flatMap { fetchClient =>
-      SimpleRestJsonBuilder(HelloService)
-        .client(fetchClient)
-        .uri(Uri.unsafeFromString(org.scalajs.dom.window.location.origin.get))
-        .resource
+      Window[IO].location.origin.flatMap(Uri.fromString(_).liftTo[IO]).toResource.flatMap {
+        SimpleRestJsonBuilder(HelloService)
+          .client(fetchClient)
+          .uri(_)
+          .resource
+      }
     }
     .flatMap { client =>
       GreetingComponent.make(client)

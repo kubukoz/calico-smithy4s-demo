@@ -23,7 +23,7 @@ Note that there will be no file watching, no automatic recompilation, or anythin
 This works best if you want to get quick feedback on the frontend changes.
 
 1. Run `yarn dev` inside `web` (after an initial `yarn` to fetch dependencies)
-2. Run `sbt ~front/frontLink` to rebuild frontend on each core/frontend change
+2. Run `sbt ~frontJS/frontLink` to rebuild frontend on each core/frontend change
 3. Run `sbt serverJVM/run` or `bloop run serverJVM` to run the backend.
 
 ## Dev server inner workings
@@ -44,4 +44,3 @@ The command line client is cross-built for Scala (JVM), Scala.js (node.js) and S
 - JVM: build with `cliJVM/stage`, run with `./cli/jvm/target/universal/stage/bin/cli`
 - JS: build with `cliJS/fastOptJS`, run with `node ./cli/js/target/scala-3.2.0/cli-fastopt.js`
 - Native: build with `cliNative/nativeLink`, run with `./cli/native/target/scala-3.2.0/cli-out`
-
