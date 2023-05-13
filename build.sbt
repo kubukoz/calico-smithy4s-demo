@@ -24,8 +24,8 @@ ThisBuild / tlFatalWarningsInCi := false
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
   libraryDependencies ++= compilerPlugins ++ Seq(
-    "com.disneystreaming" %%% "weaver-cats" % "0.8.2" % Test,
-    "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.2" % Test,
+    "com.disneystreaming" %%% "weaver-cats" % "0.8.3" % Test,
+    "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.3" % Test,
   ),
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
 )
@@ -52,8 +52,8 @@ lazy val front = crossProject(JSPlatform)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.armanbilge" %%% "calico" % "0.2.0-RC2",
-      "org.http4s" %%% "http4s-dom" % "0.2.7",
+      "com.armanbilge" %%% "calico" % "0.2.0",
+      "org.http4s" %%% "http4s-dom" % "0.2.9",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
   )
@@ -109,7 +109,7 @@ lazy val cli = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
     libraryDependencies ++= Seq(
-      "org.http4s" %%% "http4s-ember-client" % "0.23.18",
+      "org.http4s" %%% "http4s-ember-client" % "0.23.19",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %%% "smithy4s-decline" % smithy4sVersion.value,
       "com.monovore" %%% "decline-effect" % "2.4.1",
@@ -133,7 +133,7 @@ lazy val server = crossProject(JVMPlatform)
     commonSettings,
     fork := true,
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-ember-server" % "0.23.18",
+      "org.http4s" %% "http4s-ember-server" % "0.23.19",
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
     ),
