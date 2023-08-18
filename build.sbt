@@ -11,7 +11,7 @@ val compilerPlugins = List(
   // crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
 )
 
-val Scala3 = "3.2.2"
+val Scala3 = "3.3.0"
 
 ThisBuild / scalaVersion := Scala3
 ThisBuild / crossScalaVersions := Seq(Scala3)
@@ -52,7 +52,7 @@ lazy val front = crossProject(JSPlatform)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.armanbilge" %%% "calico" % "0.2.0",
+      "com.armanbilge" %%% "calico" % "0.2.1",
       "org.http4s" %%% "http4s-dom" % "0.2.9",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
