@@ -26,20 +26,94 @@ import fs2.dom.HtmlElement
 import fs2.dom.Window
 import cats.implicits._
 
+import calico.*
+import calico.frp.given
+import calico.html.io.*
+import calico.html.io.given
+import cats.effect.*
+import cats.syntax.all.*
+import fs2.concurrent.*
+import fs2.dom.*
+import hello.HelloService
+import smithy4s.schema.Schema
+import cats.kernel.Hash
+
 object Client extends IOWebApp {
+
+  private val capi = smithy4s.http.json.codecs()
+  private val documentCodec = capi.compileCodec(Schema.document)
+
+  given Hash[Issue] = Hash.fromUniversalHashCode
+
+  def issueTable(
+    endpoint: IO[List[Issue]]
+  ) = SignallingRef[IO]
+    .of(List.empty[Issue])
+    .toResource
+    .flatTap { sig =>
+      endpoint.flatMap(sig.set).background
+    }
+    .flatMap { results =>
+      table(
+        thead(
+          th("Key"),
+          th("Summary"),
+          th("Status"),
+        ),
+        tbody(
+          children <-- results
+            .nested
+            .map { issue =>
+              tr(
+                td(issue.key),
+                td(
+                  a(
+                    href := s"${Secret.baseUrlNoSlash}/browse/${issue.key}",
+                    issue.fields.summary,
+                    title := issue.fields.description.getOrElse(""),
+                  )
+                ),
+                td(issue.fields.status.map(_.name).getOrElse("")),
+              )
+            }
+            .value
+        ),
+      )
+    }
 
   def render: Resource[IO, HtmlElement[cats.effect.IO]] = FetchClientBuilder[IO]
     .resource
     .flatMap { fetchClient =>
+      //
       Window[IO].location.origin.flatMap(Uri.fromString(_).liftTo[IO]).toResource.flatMap {
-        SimpleRestJsonBuilder(HelloService)
+        SimpleRestJsonBuilder(JiraService)
           .client(fetchClient)
           .uri(_)
           .resource
       }
     }
     .flatMap { client =>
-      GreetingComponent.make(client)
+      htmlRootTag(
+        table(
+          tr(
+            td(
+              h1(
+                "SPRINT:"
+              ),
+              issueTable(
+                client
+                  .getIssuesForSprint(
+                    sprintId = 10211,
+                    jql =
+                      s"""project = "${Secret.projectName}" AND "Team(s)" in ("${Secret.teamName}") AND status != Done ORDER BY Rank ASC""".some,
+                    fields = "summary,description,status",
+                  )
+                  .map(_.issues)
+              ),
+            )
+          )
+        )
+      )
     }
 
 }

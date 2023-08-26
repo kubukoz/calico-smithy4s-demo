@@ -16,6 +16,7 @@
 
 package lame
 
+import org.http4s.implicits._
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.std.UUIDGen
@@ -27,6 +28,19 @@ import org.http4s.StaticFile
 import org.http4s.dsl.io._
 import org.http4s.ember.server.EmberServerBuilder
 import smithy4s.http4s.SimpleRestJsonBuilder
+import org.http4s.ember.client.EmberClientBuilder
+import smithy4s.http4s.ClientEndpointMiddleware
+import org.http4s.client.Client
+import smithy4s.Endpoint
+import smithy4s.Service
+import org.http4s.headers.Authorization
+import org.http4s.Credentials
+import org.http4s.AuthScheme
+import cats.effect.std.Env
+import org.http4s.Uri
+import smithy4s.Document
+import scala.collection.compat.immutable.ArraySeq
+import org.http4s.Uri.Path.Segment
 
 object Server extends IOApp.Simple {
 
@@ -51,23 +65,41 @@ object Server extends IOApp.Simple {
         .getOrElseF(InternalServerError())
   }
 
-  def run: IO[Unit] =
-    SimpleRestJsonBuilder
-      .routes(impl)
-      .resource
-      .flatMap { routes =>
+  def run: IO[Unit] = {
+    for {
+      jiraToken <-
+        Env[IO]
+          .get("JIRA_API_KEY")
+          .flatMap(_.liftTo[IO](new Throwable("JIRA_API_KEY missing")))
+          .toResource
+      emberClient <- EmberClientBuilder.default[IO].build.map { c =>
+        Client[IO] { req =>
+          c.run(
+            req.withHeaders(
+              Authorization(Credentials.Token(AuthScheme.Bearer, jiraToken))
+            )
+          )
+        }
+      }
+      jiraClient <-
+        SimpleRestJsonBuilder(JiraService)
+          .client(emberClient)
+          .uri(Uri.unsafeFromString(sys.env("JIRA_API_URL")))
+          .resource
+      jiraProxyRoutes <- SimpleRestJsonBuilder.routes(jiraClient).resource
+      srv <-
         EmberServerBuilder
           .default[IO]
           .withHost(host"0.0.0.0")
           .withPort(port"8080")
           .withHttpApp(
-            (routes <+> staticRoutes <+> smithy4s.http4s.swagger.docs[IO](HelloService)).orNotFound
+            jiraProxyRoutes.orNotFound
           )
+          .withErrorHandler { case e => IO.consoleForIO.printStackTrace(e) *> IO.raiseError(e) }
           .build
-      }
-      .evalTap { server =>
-        IO.println("Listening on " + server.addressIp4s)
-      }
-      .useForever
+    } yield srv
+  }.evalTap { server =>
+    IO.println("Listening on " + server.addressIp4s)
+  }.useForever
 
 }

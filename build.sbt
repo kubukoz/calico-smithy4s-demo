@@ -109,7 +109,7 @@ lazy val cli = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
     libraryDependencies ++= Seq(
-      "org.http4s" %%% "http4s-ember-client" % "0.23.19",
+      "org.http4s" %%% "http4s-ember-client" % "0.23.23",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %%% "smithy4s-decline" % smithy4sVersion.value,
       "com.monovore" %%% "decline-effect" % "2.4.1",
@@ -133,21 +133,21 @@ lazy val server = crossProject(JVMPlatform)
     commonSettings,
     fork := true,
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-ember-server" % "0.23.19",
-      "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
+      "org.http4s" %% "http4s-ember-client" % "0.23.23",
+      "org.http4s" %% "http4s-ember-server" % "0.23.23",
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
     ),
-    Compile / resourceGenerators += Def.task {
-      import sys.process._
+    // Compile / resourceGenerators += Def.task {
+    //   import sys.process._
 
-      val frontendDir = (front.js / yarnBuild).value
-      val targetDir = (Compile / resourceManaged).value / "frontend"
+    //   val frontendDir = (front.js / yarnBuild).value
+    //   val targetDir = (Compile / resourceManaged).value / "frontend"
 
-      IO.delete(targetDir)
-      IO.copyDirectory(frontendDir, targetDir)
+    //   IO.delete(targetDir)
+    //   IO.copyDirectory(frontendDir, targetDir)
 
-      Path.allSubpaths(targetDir).map(_._1).toList
-    },
+    //   Path.allSubpaths(targetDir).map(_._1).toList
+    // },
   )
   .dependsOn(core)
   .enablePlugins(JavaAppPackaging)
