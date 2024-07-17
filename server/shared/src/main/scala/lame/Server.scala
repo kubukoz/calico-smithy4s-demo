@@ -27,6 +27,7 @@ import org.http4s.StaticFile
 import org.http4s.dsl.io._
 import org.http4s.ember.server.EmberServerBuilder
 import smithy4s.http4s.SimpleRestJsonBuilder
+import scala.concurrent.duration.Duration
 
 object Server extends IOApp.Simple {
 
@@ -63,6 +64,11 @@ object Server extends IOApp.Simple {
           .withHttpApp(
             (routes <+> staticRoutes <+> smithy4s.http4s.swagger.docs[IO](HelloService)).orNotFound
           )
+          .withErrorHandler { case e =>
+            cats.effect.std.Console[IO].printStackTrace(e) *>
+              e.raiseError
+          }
+          .withShutdownTimeout(Duration.Zero)
           .build
       }
       .evalTap { server =>

@@ -1,25 +1,23 @@
 package com.kubukoz.lame.cli
 
-import com.monovore.decline.effect.CommandIOApp
 import cats.effect.ExitCode
 import cats.effect.IO
-import com.monovore.decline.Opts
-import smithy4s.decline.Smithy4sCli
-import smithy4s.decline.Entrypoint
-import smithy4s.http4s.SimpleRestJsonBuilder
-import hello._
-import org.http4s.client.Client
-import smithy4s.decline.util.PrinterApi
-import org.http4s.ember.client.EmberClientBuilder
+import cats.effect.MonadCancelThrow
 import cats.effect.kernel.Resource
-import org.http4s.Uri
-import org.http4s.implicits._
 import cats.effect.unsafe.IORuntime
 import com.kubukoz.lame.PlatformRuntime
-import cats.effect.MonadCancelThrow
+import com.monovore.decline.Opts
+import com.monovore.decline.effect.CommandIOApp
+import hello.*
+import org.http4s.Uri
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.implicits.*
 import smithy4s.Service
-import smithy4s.Transformation
-import smithy4s.kinds._
+import smithy4s.decline.Entrypoint
+import smithy4s.decline.Smithy4sCli
+import smithy4s.decline.util.PrinterApi
+import smithy4s.http4s.SimpleRestJsonBuilder
+import smithy4s.kinds.*
 
 object Main extends CommandIOApp("calico-demo", "Calico demo", true, "0.1.0") {
   override protected val runtime: IORuntime = PlatformRuntime.runtime
@@ -51,8 +49,7 @@ object Main extends CommandIOApp("calico-demo", "Calico demo", true, "0.1.0") {
     .map(url => Entrypoint(unliftService(makeClient(url)), PrinterApi.std[IO]))
 
   def main: Opts[IO[ExitCode]] = Smithy4sCli(
-    mainOpts,
-    HelloService,
+    mainOpts
   ).opts.map(_.as(ExitCode.Success))
 
 }

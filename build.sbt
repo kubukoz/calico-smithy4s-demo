@@ -11,7 +11,7 @@ val compilerPlugins = List(
   // crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
 )
 
-val Scala3 = "3.3.0"
+val Scala3 = "3.4.2"
 
 ThisBuild / scalaVersion := Scala3
 ThisBuild / crossScalaVersions := Seq(Scala3)
@@ -19,15 +19,13 @@ ThisBuild / crossScalaVersions := Seq(Scala3)
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 ThisBuild / tlFatalWarnings := false
-ThisBuild / tlFatalWarningsInCi := false
 
 val commonSettings = Seq(
   scalacOptions -= "-Ykind-projector:underscores",
   libraryDependencies ++= compilerPlugins ++ Seq(
-    "com.disneystreaming" %%% "weaver-cats" % "0.8.3" % Test,
-    "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.3" % Test,
+    "com.disneystreaming" %%% "weaver-cats" % "0.8.4" % Test,
+    "com.disneystreaming" %%% "weaver-scalacheck" % "0.8.4" % Test,
   ),
-  testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
 )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
@@ -52,8 +50,8 @@ lazy val front = crossProject(JSPlatform)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.armanbilge" %%% "calico" % "0.2.1",
-      "org.http4s" %%% "http4s-dom" % "0.2.9",
+      "com.armanbilge" %%% "calico" % "0.2.2",
+      "org.http4s" %%% "http4s-dom" % "0.2.11",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
     ),
   )
@@ -109,7 +107,7 @@ lazy val cli = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Full)
   .settings(
     libraryDependencies ++= Seq(
-      "org.http4s" %%% "http4s-ember-client" % "0.23.19",
+      "org.http4s" %%% "http4s-ember-client" % "0.23.27",
       "com.disneystreaming.smithy4s" %%% "smithy4s-http4s" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %%% "smithy4s-decline" % smithy4sVersion.value,
       "com.monovore" %%% "decline-effect" % "2.4.1",
@@ -133,7 +131,7 @@ lazy val server = crossProject(JVMPlatform)
     commonSettings,
     fork := true,
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-ember-server" % "0.23.19",
+      "org.http4s" %% "http4s-ember-server" % "0.23.27",
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s-swagger" % smithy4sVersion.value,
       "com.disneystreaming.smithy4s" %% "smithy4s-http4s" % smithy4sVersion.value,
     ),

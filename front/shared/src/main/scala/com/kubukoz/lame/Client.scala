@@ -18,7 +18,6 @@ import cats.effect._
 
 import hello._
 import org.http4s.dom.FetchClientBuilder
-import org.http4s.implicits._
 import smithy4s.http4s.SimpleRestJsonBuilder
 import org.http4s.Uri
 import calico.IOWebApp
