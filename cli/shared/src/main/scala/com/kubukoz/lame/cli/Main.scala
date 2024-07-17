@@ -28,12 +28,12 @@ object Main extends CommandIOApp("calico-demo", "Calico demo", true, "0.1.0") {
     algRes: Resource[F, FunctorAlgebra[Alg, F]]
   )(
     implicit service: Service[Alg]
-  ): FunctorAlgebra[Alg, F] = new Transformation.PartiallyApplied(service.reified).apply(
+  ): FunctorAlgebra[Alg, F] = service.fromPolyFunction(
     new PolyFunction5[service.Operation, Kind1[F]#toKind5] {
 
-      def apply[A, B, C, D, E](
-        op: service.Operation[A, B, C, D, E]
-      ): F[C] = algRes.use(service.toPolyFunction(_)(op))
+      def apply[I, E, O, SI, SO](
+        op: service.Operation[I, E, O, SI, SO]
+      ): F[O] = algRes.use(service.toPolyFunction(_)(op))
 
     }
   )
@@ -44,13 +44,11 @@ object Main extends CommandIOApp("calico-demo", "Calico demo", true, "0.1.0") {
     SimpleRestJsonBuilder(HelloService).client(_).uri(url).resource
   }
 
-  val impl: HelloService[IO] = ???
-
   val mainOpts: Opts[Entrypoint[HelloServiceGen, IO]] = Opts
     .option[String]("base-url", "Base URL")
     .map(Uri.unsafeFromString(_))
     .withDefault(uri"http://localhost:8080")
-    .map(url => Entrypoint(impl, PrinterApi.std[IO]))
+    .map(url => Entrypoint(unliftService(makeClient(url)), PrinterApi.std[IO]))
 
   def main: Opts[IO[ExitCode]] = Smithy4sCli(
     mainOpts,
